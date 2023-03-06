@@ -22,20 +22,6 @@
     }
   ],
   "paths": {
-    "/upload": {
-      "post": {
-        "summary": "Uploads a file.",
-        "consumes": ["multipart/form-data"],
-        "parameters": [
-          {
-            "in": "formData",
-            "name": "upfile",
-            "type": "file",
-            "description": "The file to upload."
-          }
-        ]
-      }
-    },
     "/misc/parse": {
       "post": {
         "summary": "Allows to upload a file to populate the database (may run out of quota)",
