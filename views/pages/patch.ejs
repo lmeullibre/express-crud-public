@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Update sentence</title>
+  </head>
+  <body>
+    <button onclick="history.back()">Back to Sentences</button>
+    <h1>Update sentence</h1>
+    <form
+      method="POST"
+      action="/sentences/<%= sentence.id %>"
+      enctype="application/json"
+    >
+      <input type="hidden" name="id" value="<%= sentence.id %>" />
+      <label for="text">Text:</label>
+      <input
+        type="text"
+        name="text"
+        required
+        placeholder="<%= sentence.text %>"
+        value="<%= sentence.text %>"
+      />
+      <br />
+      <label for="categories">Categories: (Use Ctrl to select many)</label>
+      <select name="categories" size="5" multiple>
+        <% categories.forEach(function(category) { %> <% if
+        (sentence.categories.includes(category.id)) { %>
+        <option value="<%= category.name %>" selected>
+          <%= category.name %>
+        </option>
+        <% } else { %>
+        <option value="<%= category.name %>"><%= category.name %></option>
+        <% } %> <% }); %>
+      </select>
+      <br />
+      <button type="submit">Edit</button>
+      <div id="message"></div>
+    </form>
+  </body>
+</html>
+
+<script>
+  const form = document.querySelector("form");
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const sentence = {
+      id: formData.get("id"),
+      text: formData.get("text"),
+      categories: formData.getAll("categories"),
+    };
+    const options = {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(sentence),
+    };
+    const apiKey = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("api_key="))
+      .split("=")[1];
+    fetch(`/sentences/${sentence.id}?api_key=${apiKey}`, options)
+      .then((response) => {
+        if (response.status === 204) {
+          const messageElement = document.getElementById("message");
+          messageElement.textContent = "Sentence updated successfully.";
+          history.pushState({}, document.title, "/sentences/list");
+          setTimeout(() => {
+            location.reload();
+          }, 2000);
+        } else {
+          return response.json();
+        }
+      })
+      .catch((error) => console.error(error));
+  });
+</script>

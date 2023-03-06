@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Create Sentence</title>
+  </head>
+  <body>
+    <button onclick="history.back()">Back to Sentences</button>
+    <h1>Create Sentence</h1>
+    <form method="POST" action="/sentences" enctype="application/json">
+      <label for="text">Text:</label>
+      <input type="text" name="text" required />
+      <br />
+      <label for="categories">Categories: (Use Ctrl to select many)</label>
+      <select name="categories" size="5" multiple>
+        <% categories.forEach(function(category) { %>
+        <option value="<%= category %>"><%= category %></option>
+        <% }); %>
+      </select>
+      <br />
+      <button type="submit">Create</button>
+      <div id="message"></div>
+    </form>
+  </body>
+</html>
+
+<script>
+  const form = document.querySelector("form");
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const sentence = {
+      text: formData.get("text"),
+      categories: formData.getAll("categories"),
+    };
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(sentence),
+    };
+    const apiKey = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("api_key="))
+      .split("=")[1];
+    fetch(`/sentences?api_key=${apiKey}`, options)
+      .then((response) => {
+        if (response.status === 201) {
+          const messageElement = document.getElementById("message");
+          messageElement.textContent = "Sentence created successfully.";
+          history.pushState({}, document.title, "/sentences/list");
+          setTimeout(() => {
+            location.reload();
+          }, 2000);
+        } else {
+          return response.json();
+        }
+      })
+      .catch((error) => console.error(error));
+  });
+</script>

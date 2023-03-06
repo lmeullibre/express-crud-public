@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head'); %>
+  </head>
+  <body class="container">
+    <main>
+      <div id="api-key-modal" class="modal">
+        <div class="modal-content">
+          <h2>Please enter your API key</h2>
+          <input type="text" id="api-key-input" />
+          <button id="save-api-key-btn">Save</button>
+        </div>
+      </div>
+      <div class="jumbotron">
+        <h1>Job listing</h1>
+        <button onclick="location.href='/sentences/new'">Create a Job</button>
+        <p>Sort by:</p>
+        <button id="asc-btn">Ascending</button>
+        <button id="desc-btn">Descending</button>
+      </div>
+      <ul>
+        <% sentences.forEach((sentence) => { %>
+        <li>
+          <h2><%= sentence.text %></h2>
+          <p><%= sentence.description %></p>
+          <ul>
+            <% sentence.categories.forEach((category) => { %>
+            <li><%= category %></li>
+            <% }); %>
+          </ul>
+          <button onclick="deleteItem('<%= sentence.id %>')">Delete</button>
+          <button onclick="location.href='/sentences/<%= sentence.id %>/edit'">
+            Edit
+          </button>
+        </li>
+        <% }); %>
+      </ul>
+      <div class="pagination">
+        <% if (page > 1) { %>
+        <a href="?page=<%= page - 1 %>&limit=<%= limit %>">
+          <button>Previous</button>
+        </a>
+        <% } %> <% if (sentences.length === limit) { %>
+        <a href="?page=<%= page + 1 %>&limit=<%= limit %>">
+          <button>Next</button>
+        </a>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>
+
+<script>
+  const apiKey = getApiKeyFromCookies();
+  if (!apiKey) {
+    // Show modal to prompt for API key
+    const apiKeyModal = document.getElementById("api-key-modal");
+    apiKeyModal.style.display = "block";
+    const saveApiKeyBtn = document.getElementById("save-api-key-btn");
+    saveApiKeyBtn.addEventListener("click", saveApiKey);
+  }
+
+  function getApiKeyFromCookies() {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith("api_key=")) {
+        return cookie.substring("api_key=".length, cookie.length);
+      }
+    }
+    return null;
+  }
+
+  function saveApiKey() {
+    const apiKeyInput = document.getElementById("api-key-input");
+    const apiKey = apiKeyInput.value;
+    if (apiKey) {
+      // Save API key to cookies
+      document.cookie = `api_key=${apiKey}`;
+      // Reload page to show updated job list
+      window.location.reload();
+    }
+  }
+  const ascBtn = document.getElementById("asc-btn");
+  const descBtn = document.getElementById("desc-btn");
+  const currentSortOrder = new URLSearchParams(window.location.search).get(
+    "sort"
+  );
+
+  window.addEventListener("click", (event) => {
+    const apiKeyModal = document.getElementById("api-key-modal");
+
+    if (event.target === apiKeyModal) {
+      apiKeyModal.style.display = "none";
+    }
+  });
+
+  // add event listeners to the buttons
+  ascBtn.addEventListener("click", () => {
+    const url = new URL(window.location.href);
+    if (currentSortOrder === "ASC") {
+      url.searchParams.delete("sort");
+    } else {
+      url.searchParams.set("sort", "ASC");
+    }
+    window.location.href = url.toString();
+  });
+
+  descBtn.addEventListener("click", () => {
+    const url = new URL(window.location.href);
+    if (currentSortOrder === "DESC") {
+      url.searchParams.delete("sort");
+    } else {
+      url.searchParams.set("sort", "DESC");
+    }
+    window.location.href = url.toString();
+  });
+
+  function deleteItem(itemId) {
+    const confirmDelete = confirm(
+      "Are you sure you want to delete this sentence?"
+    );
+    if (confirmDelete) {
+      const apiKey = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("api_key="))
+        .split("=")[1];
+      fetch(`/sentences/${itemId}?api_key=${apiKey}`, {
+        method: "DELETE",
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          // reload page to show updated job list
+          window.location.reload();
+        })
+        .catch((error) => {
+          console.error("There was a problem with the fetch operation:", error);
+        });
+    }
+  }
+</script>
